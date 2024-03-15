@@ -2,6 +2,7 @@ import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +42,7 @@ public class c1_Introduction extends IntroductionBase {
     public void hello_world() {
         Mono<String> serviceResult = hello_world_service();
 
-        String result = null; //todo: change this line only
+        String result = serviceResult.block();
 
         assertEquals("Hello World!", result);
     }
@@ -55,7 +56,7 @@ public class c1_Introduction extends IntroductionBase {
         Exception exception = assertThrows(IllegalStateException.class, () -> {
             Mono<String> serviceResult = unresponsiveService();
 
-            String result = null; //todo: change this line only
+            String result = serviceResult.block(Duration.ofSeconds(1));
         });
 
         String expectedMessage = "Timeout on blocking read for 1";
@@ -72,7 +73,7 @@ public class c1_Introduction extends IntroductionBase {
     public void empty_service() {
         Mono<String> serviceResult = emptyService();
 
-        Optional<String> optionalServiceResult = null; //todo: change this line only
+        Optional<String> optionalServiceResult = serviceResult.blockOptional();
 
         assertTrue(optionalServiceResult.isEmpty());
         assertTrue(emptyServiceIsCalled.get());
@@ -89,7 +90,7 @@ public class c1_Introduction extends IntroductionBase {
     public void multi_result_service() {
         Flux<String> serviceResult = multiResultService();
 
-        String result = serviceResult.toString(); //todo: change this line only
+        String result = serviceResult.blockFirst();
 
         assertEquals("valid result", result);
     }
@@ -103,7 +104,7 @@ public class c1_Introduction extends IntroductionBase {
     public void fortune_top_five() {
         Flux<String> serviceResult = fortuneTop5();
 
-        List<String> results = emptyList(); //todo: change this line only
+        List<String> results = serviceResult.collectList().block();
 
         assertEquals(Arrays.asList("Walmart", "Amazon", "Apple", "CVS Health", "UnitedHealth Group"), results);
         assertTrue(fortuneTop5ServiceIsCalled.get());
@@ -127,7 +128,7 @@ public class c1_Introduction extends IntroductionBase {
         Flux<String> serviceResult = fortuneTop5();
 
         serviceResult
-                .doOnNext(companyList::add)
+                .doOnNext(companyList::add).subscribe()
         //todo: add an operator here, don't use any blocking operator!
         ;
 
@@ -151,7 +152,7 @@ public class c1_Introduction extends IntroductionBase {
         AtomicReference<Boolean> serviceCallCompleted = new AtomicReference<>(false);
         CopyOnWriteArrayList<String> companyList = new CopyOnWriteArrayList<>();
 
-        fortuneTop5()
+        fortuneTop5().subscribe(companyList::add, null, () -> serviceCallCompleted.set(true))
         //todo: change this line only
         ;
 
